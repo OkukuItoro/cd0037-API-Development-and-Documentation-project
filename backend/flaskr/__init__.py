@@ -3,7 +3,6 @@ from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
-from sqlalchemy.sql import func
 
 from models import setup_db, Question, Category
 
@@ -246,43 +245,39 @@ def create_app(test_config=None):
             quiz_category = body.get("quiz_category", None)
             category_id = quiz_category["id"]
 
-            if category_id == 0:
-                rand_selection = Question.query.order_by(func.random())
-                selection = rand_selection.filter(
-                    Question.id.not_in(previous_questions)).first()
+            if category_id:
+                 # get questions based on category
+                quizz_questions = Question.query.filter(
+                                        Question.category == category_id
+                                    ).all()
 
-                if selection is not None:
-                    question = selection.format()
-                    return jsonify(
-                        {
-                            "success": True,
-                            "question": question,
-                        }
-                    )
-                return jsonify(
-                    {
-                        "question": None,
-                    }
-                )
             else:
-                rand_selection = Question.query.order_by(func.random())
-                selection = rand_selection.filter(
-                    Question.category == category_id,
-                    Question.id.not_in(previous_questions)).first()
+                 # get all the questions
+                quizz_questions = Question.query.all()
 
-                if selection is not None:
-                    question = selection.format()
-                    return jsonify(
-                        {
-                            "success": True,
-                            "question": question,
-                        }
-                    )
-                return jsonify(
-                    {
-                        "question": None,
-                    }
-                )
+            # format each question
+            next_questions = [
+                                question.format()
+                                for question in quizz_questions
+                            ]
+            
+            random_question = random.choice(next_questions)
+
+            #  make sure to not include past questions
+            while random_question['id'] in previous_questions:
+                if len(previous_questions) == len(next_questions):
+                    random_question = None
+                    break
+
+                random_question = random.choice(next_questions)
+
+            return jsonify(
+                {
+                    "success": True,
+                    "question": random_question,
+                }
+            )
+              
         except BaseException:
             abort(404)
 

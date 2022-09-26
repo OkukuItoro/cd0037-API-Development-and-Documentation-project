@@ -78,8 +78,8 @@ class TriviaTestCase(unittest.TestCase):
     
     ''' Test for handling DELETE request for a particular question using the id. '''
     def test_delete_question(self):
-        question = Question.query.first().format()["id"]
-        res = self.client().delete(f"/questions/{question}")
+        question = Question.query.first().format()
+        res = self.client().delete("/questions/" + str(question["id"]))
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 200)
@@ -164,7 +164,8 @@ class TriviaTestCase(unittest.TestCase):
             "previous_questions": [],
             "quiz_category": {
                     "id": 1,
-                    "type": "Science"}
+                    "type": "Science"
+                    }
         })
         data = json.loads(res.data)
 
